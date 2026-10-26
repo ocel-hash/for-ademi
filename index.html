@@ -74,12 +74,6 @@
       box-shadow: 0 0 18px rgba(255, 77, 121, 0.35);
     }
 
-    @media (hover: hover) and (pointer: fine) {
-      .music-toggle:hover {
-        transform: scale(1.08);
-      }
-    }
-
     .stage {
       position: fixed;
       inset: 0;
@@ -117,6 +111,7 @@
       transition: transform 0.25s ease-out;
       animation: floatEnvelope 4s ease-in-out infinite;
       cursor: pointer;
+      touch-action: manipulation;
     }
 
     @keyframes floatEnvelope {
@@ -190,6 +185,7 @@
       z-index: 4;
       border-top-left-radius: 14px;
       border-top-right-radius: 14px;
+      pointer-events: none;
     }
 
     .wax-seal {
@@ -212,6 +208,7 @@
       color: #fff3d6;
       text-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
       z-index: 5;
+      pointer-events: auto;
       transition: transform 0.35s ease, opacity 0.35s ease;
     }
 
@@ -323,8 +320,8 @@
 
     .star-btn {
       position: absolute;
-      width: 50px;
-      height: 50px;
+      width: 54px;
+      height: 54px;
       transform: translate(-50%, -50%);
       background: transparent;
       border: none;
@@ -365,12 +362,6 @@
       box-shadow: 0 0 18px #ffd166, 0 0 34px #ff4d79;
     }
 
-    @media (hover: hover) and (pointer: fine) {
-      .star-btn:hover .star-core {
-        transform: scale(1.35);
-      }
-    }
-
     .compliment-box {
       min-height: 68px;
       display: flex;
@@ -405,15 +396,7 @@
       font-weight: 600;
       cursor: pointer;
       box-shadow: 0 10px 28px rgba(255, 77, 121, 0.45);
-      transition: transform 0.22s ease, box-shadow 0.22s ease, opacity 0.4s ease;
       touch-action: manipulation;
-    }
-
-    @media (hover: hover) and (pointer: fine) {
-      .primary-btn:hover {
-        transform: translateY(-2px) scale(1.03);
-        box-shadow: 0 14px 34px rgba(255, 77, 121, 0.65);
-      }
     }
 
     .primary-btn:active {
@@ -489,7 +472,7 @@
       font-size: clamp(14px, 3.6vw, 16px);
       font-weight: 500;
       cursor: pointer;
-      transition: left 0.26s cubic-bezier(0.22, 1, 0.36, 1), top 0.26s cubic-bezier(0.22, 1, 0.36, 1), transform 0.2s ease;
+      transition: left 0.26s cubic-bezier(0.22, 1, 0.36, 1), top 0.26s cubic-bezier(0.22, 1, 0.36, 1);
       z-index: 40;
       white-space: nowrap;
       touch-action: none;
@@ -553,34 +536,11 @@
       pointer-events: auto;
       transform: translateX(-50%) translateY(0);
     }
-
-    @media (max-height: 700px) {
-      .glass-card {
-        padding: 14px 20px;
-      }
-      .constellation-box {
-        width: 240px;
-        height: 195px;
-      }
-      .compliment-box {
-        min-height: 54px;
-        padding: 8px 12px;
-        font-size: 13.5px;
-      }
-      .big-heart {
-        font-size: 40px;
-        margin-bottom: 6px;
-      }
-      .confession-text {
-        margin-bottom: 16px;
-      }
-    }
   </style>
 </head>
 <body>
 
   <canvas id="cosmos"></canvas>
-
   <button class="music-toggle" id="musicBtn" aria-label="Музыка">🎵</button>
 
   <section class="stage active" id="stage-envelope">
@@ -617,31 +577,16 @@
           <g id="dynamicLines"></g>
         </svg>
 
-        <button class="star-btn" style="left: 50%; top: 86%;" data-index="0" aria-label="Звезда 1">
-          <span class="star-core"></span>
-        </button>
-        <button class="star-btn" style="left: 16%; top: 50%;" data-index="1" aria-label="Звезда 2">
-          <span class="star-core"></span>
-        </button>
-        <button class="star-btn" style="left: 28%; top: 18%;" data-index="2" aria-label="Звезда 3">
-          <span class="star-core"></span>
-        </button>
-        <button class="star-btn" style="left: 72%; top: 18%;" data-index="3" aria-label="Звезда 4">
-          <span class="star-core"></span>
-        </button>
-        <button class="star-btn" style="left: 84%; top: 50%;" data-index="4" aria-label="Звезда 5">
-          <span class="star-core"></span>
-        </button>
+        <button class="star-btn" style="left: 50%; top: 86%;" data-index="0"><span class="star-core"></span></button>
+        <button class="star-btn" style="left: 16%; top: 50%;" data-index="1"><span class="star-core"></span></button>
+        <button class="star-btn" style="left: 28%; top: 18%;" data-index="2"><span class="star-core"></span></button>
+        <button class="star-btn" style="left: 72%; top: 18%;" data-index="3"><span class="star-core"></span></button>
+        <button class="star-btn" style="left: 84%; top: 50%;" data-index="4"><span class="star-core"></span></button>
       </div>
 
-      <div class="compliment-box" id="complimentBox">
-        Коснись любой звезды на небе ✨
-      </div>
+      <div class="compliment-box" id="complimentBox">Коснись любой звезды на небе ✨</div>
       <div class="progress-text" id="starProgress">Зажжено звёзд: 0 из 5</div>
-
-      <button class="primary-btn hidden-btn" id="toConfessionBtn">
-        Открыть главное признание 💌
-      </button>
+      <button class="primary-btn hidden-btn" id="toConfessionBtn">Открыть главное признание 💌</button>
     </div>
   </section>
 
@@ -649,10 +594,7 @@
     <div class="glass-card">
       <div class="big-heart">❤️</div>
       <h1 class="confession-heading">Әдемі, я тебя люблю</h1>
-      <p class="confession-text">
-        Среди миллионов звёзд моё сердце выбрало только одну — тебя. Разделишь со мной эту вселенную? ✨
-      </p>
-
+      <p class="confession-text">Среди миллионов звёзд моё сердце выбрало только одну — тебя. Разделишь со мной эту вселенную? ✨</p>
       <div class="choice-row">
         <button class="primary-btn yes-btn" id="yesBtn">Да! ❤️</button>
         <button class="runaway-btn" id="noBtn">Подумаю... 🙈</button>
@@ -663,7 +605,7 @@
   <section class="stage" id="stage-finale">
     <div class="finale-banner">
       <div class="finale-title">Әдемі, я тебя люблю! ❤️</div>
-      <div class="finale-sub" id="finaleHint">Нажимай на ночное небо, чтобы запускать салюты ✨</div>
+      <div class="finale-sub" id="finaleHint">Касайся неба, чтобы зажигать салюты ✨</div>
     </div>
   </section>
 
@@ -681,9 +623,7 @@
         try {
           tg.setHeaderColor('#060613');
           tg.setBackgroundColor('#060613');
-          if (typeof tg.disableVerticalSwipes === 'function') {
-            tg.disableVerticalSwipes();
-          }
+          if (typeof tg.disableVerticalSwipes === 'function') tg.disableVerticalSwipes();
         } catch (e) {}
       }
 
@@ -694,10 +634,42 @@
         success: () => { try { tg?.HapticFeedback?.notificationOccurred('success'); } catch (e) {} }
       };
 
-      const finaleHint = document.getElementById('finaleHint');
-      finaleHint.textContent = isTouchDevice
-        ? 'Касайся неба, чтобы зажигать новые салюты ✨'
-        : 'Кликай по небу, чтобы зажигать новые салюты ✨';
-
       let audioCtx = null;
-      let musicP
+      let musicPlaying = false;
+      let melodyTimer = null;
+      const musicBtn = document.getElementById('musicBtn');
+      const notes = [523.25, 659.25, 783.99, 1046.5, 783.99, 659.25, 587.33, 698.46, 880.0, 698.46];
+      let noteIdx = 0;
+
+      function initAudio() {
+        try {
+          if (!audioCtx) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (AudioContext) audioCtx = new AudioContext();
+          }
+          if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume();
+          }
+        } catch (e) {}
+      }
+
+      function playTone(freq, duration = 1.2, volume = 0.05) {
+        if (!audioCtx || !musicPlaying) return;
+        try {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+          gain.gain.setValueAtTime(0.001, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(volume, audioCtx.currentTime + 0.04);
+          gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + duration);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start();
+          osc.stop(audioCtx.currentTime + duration);
+        } catch (e) {}
+      }
+
+      function playChime(freq = 880) {
+        initAudio();
+        if (!audioC 
