@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Для Әдемі ✨</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg-deep: #060613;
+      --accent: #ff4d79;
+      --accent-soft: #ff8fa3;
+      --gold: #ffd166;
+      --glass: rgba(18, 16, 40, 0.68);
+      --glass-border: rgba(255, 255, 255, 0.16);
+      --safe-top: max(16px, env(safe-area-inset-top));
+      --safe-bottom: max(20px, env(safe-area-inset-bottom));
+      --safe-left: max(16px, env(safe-area-inset-left));
+      --safe-right: max(16px, env(safe-area-inset-right));
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100vh;
+      height: var(--tg-viewport-stable-height, 100dvh);
+      overflow: hidden;
+      overscroll-behavior: none;
+      background: var(--bg-deep);
+      color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    #cosmos {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      touch-action: none;
+    }
+
+    .music-toggle {
+      position: fixed;
+      top: var(--safe-top);
+      right: var(--safe-right);
+      z-index: 50;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid var(--glass-border);
+      background: var(--glass);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: #fff;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s ease, border-color 0.3s ease;
+    }
+
+    .music-toggle.playing {
+      border-color: rgba(255, 77, 121, 0.7);
+      box-shadow: 0 0 18px rgba(255, 77, 121, 0.35);
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+      .music-toggle:hover {
+        transform: scale(1.08);
+      }
+    }
+
+    .stage {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(18px) scale(0.97);
+      transition: opacity 0.65s ease, transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .stage.active {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0) scale(1);
+    }
+
+    .envelope-scene {
+      perspective: 1100px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: clamp(20px, 4vh, 32px);
+    }
+
+    .envelope-wrapper {
+      position: relative;
+      width: clamp(270px, 78vw, 380px);
+      height: clamp(185px, 52vw, 255px);
+      transform-style: preserve-3d;
+      transition: transform 0.25s ease-out;
+      animation: floatEnvelope 4s ease-in-out infinite;
+      cursor: pointer;
+    }
+
+    @keyframes floatEnvelope {
+      0%, 100% { translate: 0 0; }
+      50% { translate: 0 -10px; }
+    }
+
+    .envelope-back {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(145deg, #2b193d, #1b112c);
+      border-radius: 14px;
+      box-shadow: 0 22px 50px rgba(0, 0, 0, 0.65), 0 0 35px rgba(255, 77, 121, 0.2);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .letter-card {
+      position: absolute;
+      left: 7%;
+      right: 7%;
+      top: 10%;
+      bottom: 10%;
+      background: linear-gradient(180deg, #fff8fb 0%, #ffe3ec 100%);
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      text-align: center;
+      color: #3a1528;
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+      transition: transform 0.85s cubic-bezier(0.22, 1, 0.36, 1) 0.35s;
+      z-index: 2;
+    }
+
+    .letter-card span {
+      font-size: clamp(15px, 3.8vw, 19px);
+      font-weight: 600;
+      letter-spacing: 0.3px;
+    }
+
+    .envelope-front {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      pointer-events: none;
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .envelope-front::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, #3c2254 0%, #261538 100%);
+      clip-path: polygon(0 0, 50% 56%, 100% 0, 100% 100%, 0 100%);
+      border-radius: 14px;
+    }
+
+    .envelope-flap {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 60%;
+      background: linear-gradient(180deg, #4b2b68 0%, #341c4a 100%);
+      clip-path: polygon(0 0, 100% 0, 50% 100%);
+      transform-origin: top center;
+      transition: transform 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 4;
+      border-top-left-radius: 14px;
+      border-top-right-radius: 14px;
+    }
+
+    .wax-seal {
+      position: absolute;
+      top: 54%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: clamp(60px, 15vw, 72px);
+      height: clamp(60px, 15vw, 72px);
+      border-radius: 50%;
+      background: radial-gradient(circle at 32% 30%, #ff7597, #d92654 68%, #991336 100%);
+      box-shadow: 0 6px 20px rgba(217, 38, 84, 0.6), inset 0 2px 5px rgba(255, 255, 255, 0.4);
+      border: 2px solid rgba(255, 214, 224, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(26px, 6.5vw, 32px);
+      font-weight: bold;
+      color: #fff3d6;
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
+      z-index: 5;
+      transition: transform 0.35s ease, opacity 0.35s ease;
+    }
+
+    .wax-seal::after {
+      content: "";
+      position: absolute;
+      inset: -6px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255, 117, 151, 0.55);
+      animation: pulseSeal 2s infinite;
+    }
+
+    @keyframes pulseSeal {
+      0% { transform: scale(0.95); opacity: 0.9; }
+      70% { transform: scale(1.22); opacity: 0; }
+      100% { transform: scale(1.22); opacity: 0; }
+    }
+
+    .envelope-wrapper.opened .wax-seal {
+      transform: translate(-50%, -50%) scale(1.5);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .envelope-wrapper.opened .envelope-flap {
+      transform: rotateX(180deg);
+      z-index: 1;
+    }
+
+    .envelope-wrapper.opened .letter-card {
+      transform: translateY(-58%);
+    }
+
+    .hint-text {
+      font-size: clamp(14px, 3.6vw, 16px);
+      color: rgba(255, 255, 255, 0.82);
+      text-align: center;
+      letter-spacing: 0.3px;
+      max-width: 320px;
+      line-height: 1.45;
+    }
+
+    .glass-card {
+      width: min(92vw, 520px);
+      background: var(--glass);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      border-radius: 24px;
+      padding: clamp(18px, 4vw, 30px);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .card-title {
+      font-size: clamp(20px, 5vw, 26px);
+      font-weight: 700;
+      background: linear-gradient(90deg, #fff, #ffb3c6, #ffd166);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+    }
+
+    .card-subtitle {
+      font-size: clamp(13px, 3.4vw, 15px);
+      color: rgba(255, 255, 255, 0.72);
+      margin-bottom: clamp(10px, 2vh, 18px);
+    }
+
+    .constellation-box {
+      position: relative;
+      width: min(76vw, 320px);
+      height: min(64vw, 270px);
+      margin: 4px auto;
+    }
+
+    .constellation-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .guide-line {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.14);
+      stroke-width: 1.5;
+      stroke-dasharray: 4 5;
+    }
+
+    .active-line {
+      fill: none;
+      stroke: url(#heartGrad);
+      stroke-width: 2.8;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      filter: drop-shadow(0 0 8px rgba(255, 105, 145, 0.8));
+      opacity: 0;
+      transition: opacity 0.6s ease;
+    }
+
+    .active-line.visible {
+      opacity: 1;
+    }
+
+    .star-btn {
+      position: absolute;
+      width: 50px;
+      height: 50px;
+      transform: translate(-50%, -50%);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      touch-action: manipulation;
+    }
+
+    .star-core {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #ffffff;
+      box-shadow: 0 0 12px rgba(255, 255, 255, 0.9), 0 0 24px rgba(255, 209, 102, 0.6);
+      transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.3s ease, box-shadow 0.3s ease;
+      position: relative;
+    }
+
+    .star-core::after {
+      content: "";
+      position: absolute;
+      inset: -8px;
+      border-radius: 50%;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      animation: starRing 2.4s infinite ease-in-out;
+    }
+
+    @keyframes starRing {
+      0%, 100% { transform: scale(0.85); opacity: 0.5; }
+      50% { transform: scale(1.25); opacity: 1; }
+    }
+
+    .star-btn.lit .star-core {
+      background: var(--gold);
+      transform: scale(1.45);
+      box-shadow: 0 0 18px #ffd166, 0 0 34px #ff4d79;
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+      .star-btn:hover .star-core {
+        transform: scale(1.35);
+      }
+    }
+
+    .compliment-box {
+      min-height: 68px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 14px;
+      margin-top: 8px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      width: 100%;
+      font-size: clamp(13.5px, 3.5vw, 15.5px);
+      line-height: 1.45;
+      color: #ffeef3;
+      transition: opacity 0.25s ease;
+    }
+
+    .progress-text {
+      margin-top: 10px;
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .primary-btn {
+      margin-top: 14px;
+      padding: 14px 28px;
+      border-radius: 999px;
+      border: none;
+      background: linear-gradient(135deg, #ff4d79 0%, #ff758f 100%);
+      color: #fff;
+      font-size: clamp(15px, 3.8vw, 17px);
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 10px 28px rgba(255, 77, 121, 0.45);
+      transition: transform 0.22s ease, box-shadow 0.22s ease, opacity 0.4s ease;
+      touch-action: manipulation;
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+      .primary-btn:hover {
+        transform: translateY(-2px) scale(1.03);
+        box-shadow: 0 14px 34px rgba(255, 77, 121, 0.65);
+      }
+    }
+
+    .primary-btn:active {
+      transform: scale(0.97);
+    }
+
+    .hidden-btn {
+      opacity: 0;
+      pointer-events: none;
+      height: 0;
+      margin-top: 0;
+      padding-top: 0;
+      padding-bottom: 0;
+      overflow: hidden;
+    }
+
+    .big-heart {
+      font-size: clamp(46px, 11vw, 64px);
+      margin-bottom: 10px;
+      filter: drop-shadow(0 0 22px rgba(255, 77, 121, 0.7));
+      animation: heartbeat 1.5s infinite ease-in-out;
+    }
+
+    @keyframes heartbeat {
+      0%, 100% { transform: scale(1); }
+      18% { transform: scale(1.16); }
+      34% { transform: scale(1); }
+      52% { transform: scale(1.1); }
+    }
+
+    .confession-heading {
+      font-size: clamp(26px, 6.8vw, 38px);
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 12px;
+      background: linear-gradient(120deg, #ffffff 0%, #ff9ebb 50%, #ffd166 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .confession-text {
+      font-size: clamp(14.5px, 3.7vw, 17px);
+      line-height: 1.55;
+      color: rgba(255, 255, 255, 0.88);
+      margin-bottom: 24px;
+      max-width: 420px;
+    }
+
+    .choice-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      width: 100%;
+      min-height: 54px;
+    }
+
+    .yes-btn {
+      margin-top: 0;
+      min-width: 145px;
+      font-size: clamp(16px, 4vw, 18px);
+    }
+
+    .runaway-btn {
+      padding: 13px 22px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.26);
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: rgba(255, 255, 255, 0.9);
+      font-size: clamp(14px, 3.6vw, 16px);
+      font-weight: 500;
+      cursor: pointer;
+      transition: left 0.26s cubic-bezier(0.22, 1, 0.36, 1), top 0.26s cubic-bezier(0.22, 1, 0.36, 1), transform 0.2s ease;
+      z-index: 40;
+      white-space: nowrap;
+      touch-action: none;
+    }
+
+    #stage-finale {
+      justify-content: flex-start;
+      padding-top: calc(var(--safe-top) + 36px);
+      pointer-events: none;
+    }
+
+    .finale-banner {
+      background: rgba(14, 12, 32, 0.52);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 22px;
+      padding: 18px 24px;
+      text-align: center;
+      max-width: min(90vw, 460px);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+    }
+
+    .finale-title {
+      font-size: clamp(22px, 5.8vw, 32px);
+      font-weight: 800;
+      background: linear-gradient(90deg, #fff, #ff8fa3, #ffd166);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+    }
+
+    .finale-sub {
+      font-size: clamp(13px, 3.4vw, 15px);
+      color: rgba(255, 255, 255, 0.82);
+    }
+
+    .tg-send-btn {
+      position: fixed;
+      bottom: calc(var(--safe-bottom) + 10px);
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      z-index: 60;
+      padding: 14px 28px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      background: linear-gradient(135deg, #ff4d79, #ff758f);
+      color: #ffffff;
+      font-size: 16px;
+      font-weight: 600;
+      box-shadow: 0 10px 28px rgba(255, 77, 121, 0.55);
+      cursor: pointer;
+      opacity: 0;
+      pointer-events: none;
+      white-space: nowrap;
+      transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .tg-send-btn.visible {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @media (max-height: 700px) {
+      .glass-card {
+        padding: 14px 20px;
+      }
+      .constellation-box {
+        width: 240px;
+        height: 195px;
+      }
+      .compliment-box {
+        min-height: 54px;
+        padding: 8px 12px;
+        font-size: 13.5px;
+      }
+      .big-heart {
+        font-size: 40px;
+        margin-bottom: 6px;
+      }
+      .confession-text {
+        margin-bottom: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="cosmos"></canvas>
+
+  <button class="music-toggle" id="musicBtn" aria-label="Музыка">🎵</button>
+
+  <section class="stage active" id="stage-envelope">
+    <div class="envelope-scene">
+      <div class="envelope-wrapper" id="envelope">
+        <div class="envelope-back"></div>
+        <div class="letter-card">
+          <span>Для самой прекрасной ✨</span>
+        </div>
+        <div class="envelope-front"></div>
+        <div class="envelope-flap"></div>
+        <div class="wax-seal" id="waxSeal">Ә</div>
+      </div>
+      <p class="hint-text">Нажми на печать «Ә», чтобы открыть тайное послание ✨</p>
+    </div>
+  </section>
+
+  <section class="stage" id="stage-stars">
+    <div class="glass-card">
+      <h2 class="card-title">Созвездие «Әдемі»</h2>
+      <p class="card-subtitle">Зажги все 5 путеводных звёзд</p>
+
+      <div class="constellation-box" id="constellationBox">
+        <svg class="constellation-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="heartGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#ffd166" />
+              <stop offset="50%" stop-color="#ff758f" />
+              <stop offset="100%" stop-color="#ff4d79" />
+            </linearGradient>
+          </defs>
+          <polygon class="guide-line" points="50,86 16,50 28,18 50,33 72,18 84,50" />
+          <polygon class="active-line" id="heartOutline" points="50,86 16,50 28,18 50,33 72,18 84,50" />
+          <g id="dynamicLines"></g>
+        </svg>
+
+        <button class="star-btn" style="left: 50%; top: 86%;" data-index="0" aria-label="Звезда 1">
+          <span class="star-core"></span>
+        </button>
+        <button class="star-btn" style="left: 16%; top: 50%;" data-index="1" aria-label="Звезда 2">
+          <span class="star-core"></span>
+        </button>
+        <button class="star-btn" style="left: 28%; top: 18%;" data-index="2" aria-label="Звезда 3">
+          <span class="star-core"></span>
+        </button>
+        <button class="star-btn" style="left: 72%; top: 18%;" data-index="3" aria-label="Звезда 4">
+          <span class="star-core"></span>
+        </button>
+        <button class="star-btn" style="left: 84%; top: 50%;" data-index="4" aria-label="Звезда 5">
+          <span class="star-core"></span>
+        </button>
+      </div>
+
+      <div class="compliment-box" id="complimentBox">
+        Коснись любой звезды на небе ✨
+      </div>
+      <div class="progress-text" id="starProgress">Зажжено звёзд: 0 из 5</div>
+
+      <button class="primary-btn hidden-btn" id="toConfessionBtn">
+        Открыть главное признание 💌
+      </button>
+    </div>
+  </section>
+
+  <section class="stage" id="stage-confession">
+    <div class="glass-card">
+      <div class="big-heart">❤️</div>
+      <h1 class="confession-heading">Әдемі, я тебя люблю</h1>
+      <p class="confession-text">
+        Среди миллионов звёзд моё сердце выбрало только одну — тебя. Разделишь со мной эту вселенную? ✨
+      </p>
+
+      <div class="choice-row">
+        <button class="primary-btn yes-btn" id="yesBtn">Да! ❤️</button>
+        <button class="runaway-btn" id="noBtn">Подумаю... 🙈</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="stage" id="stage-finale">
+    <div class="finale-banner">
+      <div class="finale-title">Әдемі, я тебя люблю! ❤️</div>
+      <div class="finale-sub" id="finaleHint">Нажимай на ночное небо, чтобы запускать салюты ✨</div>
+    </div>
+  </section>
+
+  <button class="tg-send-btn" id="tgSendBtn">Отправить ответ в чат 💌</button>
+
+  <script>
+    (() => {
+      const tg = window.Telegram && window.Telegram.WebApp;
+      const isTelegram = Boolean(tg && tg.initData);
+      const isTouchDevice = window.matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+
+      if (tg) {
+        tg.ready();
+        tg.expand();
+        try {
+          tg.setHeaderColor('#060613');
+          tg.setBackgroundColor('#060613');
+          if (typeof tg.disableVerticalSwipes === 'function') {
+            tg.disableVerticalSwipes();
+          }
+        } catch (e) {}
+      }
+
+      const haptic = {
+        light: () => { try { tg?.HapticFeedback?.impactOccurred('light'); } catch (e) {} },
+        medium: () => { try { tg?.HapticFeedback?.impactOccurred('medium'); } catch (e) {} },
+        select: () => { try { tg?.HapticFeedback?.selectionChanged(); } catch (e) {} },
+        success: () => { try { tg?.HapticFeedback?.notificationOccurred('success'); } catch (e) {} }
+      };
+
+      const finaleHint = document.getElementById('finaleHint');
+      finaleHint.textContent = isTouchDevice
+        ? 'Касайся неба, чтобы зажигать новые салюты ✨'
+        : 'Кликай по небу, чтобы зажигать новые салюты ✨';
+
+      let audioCtx = null;
+      let musicP
