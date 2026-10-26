@@ -672,4 +672,361 @@
 
       function playChime(freq = 880) {
         initAudio();
-        if (!audioC 
+        if (!audioCtx) return;
+            try {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.7);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.7);
+    } catch (e) {}
+  }
+
+  function startMusic() {
+    initAudio();
+    if (musicPlaying) return;
+    musicPlaying = true;
+    musicBtn.classList.add('playing');
+    melodyTimer = setInterval(() => {
+      playTone(notes[noteIdx % notes.length], 1.5, 0.045);
+      noteIdx++;
+    }, 650);
+  }
+
+  musicBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    haptic.select();
+    if (musicPlaying) {
+      musicPlaying = false;
+      musicBtn.classList.remove('playing');
+      clearInterval(melodyTimer);
+    } else {
+      startMusic();
+    }
+  });
+
+  const canvas = document.getElementById('cosmos');
+  const ctx = canvas.getContext('2d');
+  let width = 0, height = 0, dpr = 1;
+  let stars = [], floatHearts = [], sparkles = [], fireworks = [];
+  let shootingStar = null, finaleMode = false;
+
+  function resizeCanvas() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    const starCount = Math.min(160, Math.max(65, Math.floor((width * height) / 9000)));
+    stars = Array.from({ length: starCount }, () => ({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      r: Math.random() * 1.6 + 0.4,
+      alpha: Math.random(),
+      speed: (Math.random() * 0.018 + 0.005) * (Math.random() < 0.5 ? 1 : -1)
+    }));
+  }
+
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+
+  for (let i = 0; i < 14; i++) {
+    floatHearts.push({
+      x: Math.random() * width,
+      y: Math.random() * height,
+      size: Math.random() * 8 + 6,
+      vy: Math.random() * 0.35 + 0.15,
+      vx: (Math.random() - 0.5) * 0.25,
+      alpha: Math.random() * 0.25 + 0.08
+    });
+  }
+
+  function addSparkles(x, y, count = 3) {
+    for (let i = 0; i < count; i++) {
+      sparkles.push({
+        x, y,
+        vx: (Math.random() - 0.5) * 2.2,
+        vy: (Math.random() - 0.5) * 2.2,
+        r: Math.random() * 2.4 + 1,
+        alpha: 1,
+        color: Math.random() > 0.4 ? '#ff8fa3' : '#ffd166'
+      });
+    }
+  }
+
+  function launchHeartFirework(cx, cy) {
+    const colors = ['#ff4d79', '#ff8fa3', '#ffd166', '#c77dff', '#ff758f'];
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const scale = Math.min(width, height) < 480 ? 0.19 : 0.26;
+    for (let i = 0; i < 46; i++) {
+      const t = (Math.PI * 2 * i) / 46;
+      const hx = 16 * Math.pow(Math.sin(t), 3);
+      const hy = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+      fireworks.push({
+        x: cx, y: cy,
+        vx: hx * scale * (0.92 + Math.random() * 0.16),
+        vy: hy * scale * (0.92 + Math.random() * 0.16),
+        alpha: 1, decay: 0.011 + Math.random() * 0.006,
+        r: Math.random() * 2.2 + 1.6, color
+      });
+    }
+  }
+
+  function drawMiniHeart(x, y, size, alpha) {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(size / 16, size / 16);
+    ctx.beginPath();
+    ctx.moveTo(0, 4);
+    ctx.bezierCurveTo(0, 0, -8, 0, -8, 5);
+    ctx.bezierCurveTo(-8, 10, 0, 14, 0, 17);
+    ctx.bezierCurveTo(0, 14, 8, 10, 8, 5);
+    ctx.bezierCurveTo(8, 0, 0, 0, 0, 4);
+    ctx.fillStyle = `rgba(255, 130, 165, ${alpha})`;
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function renderCosmos() {
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
+    bgGrad.addColorStop(0, '#050511');
+    bgGrad.addColorStop(0.55, '#0f0c29');
+    bgGrad.addColorStop(1, '#1d1033');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, width, height);
+
+    for (const s of stars) {
+      s.alpha += s.speed;
+      if (s.alpha > 1 || s.alpha < 0.15) s.speed *= -1;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(255, 255, 255, ${Math.max(0.1, Math.min(1, s.alpha))})`;
+      ctx.fill();
+    }
+
+    for (const h of floatHearts) {
+      h.y -= h.vy;
+      h.x += h.vx;
+      if (h.y < -20) { h.y = height + 20; h.x = Math.random() * width; }
+      drawMiniHeart(h.x, h.y, h.size, h.alpha);
+    }
+
+    for (let i = sparkles.length - 1; i >= 0; i--) {
+      const p = sparkles[i];
+      p.x += p.vx; p.y += p.vy; p.alpha -= 0.028;
+      if (p.alpha <= 0) { sparkles.splice(i, 1); continue; }
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = p.alpha;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+
+    for (let i = fireworks.length - 1; i >= 0; i--) {
+      const f = fireworks[i];
+      f.x += f.vx; f.y += f.vy;
+      f.vx *= 0.965; f.vy = f.vy * 0.965 + 0.035;
+      f.alpha -= f.decay;
+      if (f.alpha <= 0) { fireworks.splice(i, 1); continue; }
+      ctx.beginPath();
+      ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+      ctx.fillStyle = f.color;
+      ctx.globalAlpha = f.alpha;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+
+    requestAnimationFrame(renderCosmos);
+  }
+  renderCosmos();
+
+  window.addEventListener('pointerdown', (e) => {
+    if (finaleMode && !e.target.closest('button')) {
+      haptic.light();
+      playChime(660 + Math.random() * 440);
+      launchHeartFirework(e.clientX, e.clientY);
+    } else {
+      addSparkles(e.clientX, e.clientY, 6);
+    }
+  });
+
+  function showStage(id) {
+    document.querySelectorAll('.stage').forEach((el) => el.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  const envelope = document.getElementById('envelope');
+  let envelopeOpened = false;
+
+  envelope.addEventListener('click', (e) => {
+    if (envelopeOpened) return;
+    envelopeOpened = true;
+    startMusic();
+    playChime(784);
+    haptic.medium();
+
+    const rect = document.getElementById('waxSeal').getBoundingClientRect();
+    addSparkles(rect.left + rect.width / 2, rect.top + rect.height / 2, 26);
+    envelope.classList.add('opened');
+
+    setTimeout(() => showStage('stage-stars'), 1550);
+  });
+
+  const compliments = [
+    'Әдемі — твоё имя означает «Прекрасная», и в мире нет слова точнее ✨',
+    'Твоя улыбка способна согреть даже самый холодный вечер 🌙',
+    'В твоих глазах спрятан целый космос, которым хочется любоваться вечно 💫',
+    'Рядом с тобой самые обычные минуты превращаются в волшебство 🌟',
+    'Каждая мысль о тебе отзывается в сердце теплом и нежностью ❤️'
+  ];
+
+  const starCoords = [{x:50,y:86}, {x:16,y:50}, {x:28,y:18}, {x:72,y:18}, {x:84,y:50}];
+  const litSet = new Set();
+  let prevStarIdx = null;
+  const dynamicLines = document.getElementById('dynamicLines');
+  const complimentBox = document.getElementById('complimentBox');
+  const starProgress = document.getElementById('starProgress');
+  const toConfessionBtn = document.getElementById('toConfessionBtn');
+  const starChimes = [523.25, 587.33, 659.25, 783.99, 1046.5];
+
+  document.querySelectorAll('.star-btn').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const idx = Number(btn.dataset.index);
+      const rect = btn.getBoundingClientRect();
+      addSparkles(rect.left + rect.width / 2, rect.top + rect.height / 2, 14);
+      haptic.select();
+      playChime(starChimes[idx]);
+
+      complimentBox.style.opacity = '0';
+      setTimeout(() => {
+        complimentBox.textContent = compliments[idx];
+        complimentBox.style.opacity = '1';
+      }, 150);
+
+      if (!litSet.has(idx)) {
+        btn.classList.add('lit');
+        if (prevStarIdx !== null) {
+          const p1 = starCoords[prevStarIdx];
+          const p2 = starCoords[idx];
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line.setAttribute('x1', p1.x); line.setAttribute('y1', p1.y);
+          line.setAttribute('x2', p2.x); line.setAttribute('y2', p2.y);
+          line.setAttribute('stroke', 'rgba(255, 209, 102, 0.65)');
+          line.setAttribute('stroke-width', '1.8');
+          dynamicLines.appendChild(line);
+        }
+        prevStarIdx = idx;
+        litSet.add(idx);
+        starProgress.textContent = `Зажжено звёзд: ${litSet.size} из 5`;
+
+        if (litSet.size === 5) {
+          haptic.success();
+          document.getElementById('heartOutline').classList.add('visible');
+          starProgress.textContent = 'Созвездие сердца собрано ✨';
+          toConfessionBtn.classList.remove('hidden-btn');
+        }
+      }
+    });
+  });
+
+  toConfessionBtn.addEventListener('click', () => {
+    haptic.medium();
+    playChime(880);
+    showStage('stage-confession');
+  });
+
+  const yesBtn = document.getElementById('yesBtn');
+  const noBtn = document.getElementById('noBtn');
+  const funnyTexts = ['Точно подумаешь? 🙈', 'Не поймаешь! ✨', 'Попробуй другую кнопочку ❤️', 'Сердце не обманешь 💫', 'А если честно? 😊'];
+  let dodges = 0;
+  let isFloatingBtn = false;
+
+  function moveRunawayButton(pointerX, pointerY) {
+    if (!isFloatingBtn) {
+      const r = noBtn.getBoundingClientRect();
+      noBtn.style.position = 'fixed';
+      noBtn.style.left = `${r.left}px`;
+      noBtn.style.top = `${r.top}px`;
+      isFloatingBtn = true;
+    }
+
+    dodges++;
+    haptic.light();
+    noBtn.textContent = funnyTexts[(dodges - 1) % funnyTexts.length];
+
+    const btnW = noBtn.offsetWidth || 150;
+    const btnH = noBtn.offsetHeight || 46;
+    const pad = 20;
+    const arenaW = Math.min(width - pad * 2, 620);
+    const arenaH = Math.min(height - pad * 2 - 50, 460);
+    const minX = (width - arenaW) / 2;
+    const maxX = minX + arenaW - btnW;
+    const minY = Math.max(70, (height - arenaH) / 2);
+    const maxY = Math.max(minY + 20, minY + arenaH - btnH);
+    const yesRect = yesBtn.getBoundingClientRect();
+
+    let nextX = minX, nextY = minY;
+    for (let i = 0; i < 15; i++) {
+      const cx = minX + Math.random() * Math.max(10, maxX - minX);
+      const cy = minY + Math.random() * Math.max(10, maxY - minY);
+      const overlapsYes = (cx < yesRect.right + 16 && cx + btnW > yesRect.left - 16 && cy < yesRect.bottom + 16 && cy + btnH > yesRect.top - 16);
+      nextX = cx; nextY = cy;
+      if (!overlapsYes) break;
+    }
+    noBtn.style.left = `${nextX}px`;
+    noBtn.style.top = `${nextY}px`;
+  }
+
+  noBtn.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    moveRunawayButton(e.clientX, e.clientY);
+  });
+
+  const tgSendBtn = document.getElementById('tgSendBtn');
+  let yesActivated = false;
+
+  yesBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (yesActivated) return;
+    yesActivated = true;
+    finaleMode = true;
+
+    noBtn.style.display = 'none';
+    haptic.success();
+    startMusic();
+    playChime(1046.5);
+    showStage('stage-finale');
+
+    [[width * 0.5, height * 0.42, 100], [width * 0.26, height * 0.52, 550], [width * 0.74, height * 0.48, 1000], [width * 0.5, height * 0.35, 1550]].forEach(([bx, by, delay]) => {
+      setTimeout(() => { launchHeartFirework(bx, by); haptic.light(); }, delay);
+    });
+
+    if (isTelegram) {
+      setTimeout(() => tgSendBtn.classList.add('visible'), 3200);
+    }
+  });
+
+  tgSendBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    haptic.medium();
+    try {
+      tg.sendData(JSON.stringify({ answer: 'yes', dodges, device: isTouchDevice ? '📱 Телефон' : '💻 ПК' }));
+    } catch (err) {
+      tg.close();
+    }
+  });
+})();
+    </script>
+</body>
+</html>
+
